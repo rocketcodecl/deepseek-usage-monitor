@@ -47,7 +47,7 @@ dseek demo              # datos de ejemplo para probar sin gastar tu API
 ### Opción 1 — Plugin SwiftBar (recomendada, cero dependencias)
 
 ```bash
-brew install swiftbar
+brew install --cask swiftbar
 mkdir -p ~/swiftbar-plugins
 cp swiftbar/deepseek.5m.py ~/swiftbar-plugins/   # el "5m" del nombre = refresco cada 5 min
 chmod +x ~/swiftbar-plugins/deepseek.5m.py
