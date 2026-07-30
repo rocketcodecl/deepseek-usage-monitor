@@ -1,0 +1,24 @@
+{
+  "_comment": "Precios en USD por 1 MILLÓN de tokens. DeepSeek cambia precios y modelos con el tiempo: revisa y edita en https://api-docs.deepseek.com/quick_start/pricing",
+  "_updated": "revisar-en-la-página-oficial",
+  "deepseek-chat": {
+    "input_cache_hit": 0.07,
+    "input_cache_miss": 0.27,
+    "output": 1.10
+  },
+  "deepseek-reasoner": {
+    "input_cache_hit": 0.14,
+    "input_cache_miss": 0.55,
+    "output": 2.19
+  },
+  "deepseek-v4-flash": {
+    "input_cache_hit": 0.0,
+    "input_cache_miss": 0.0,
+    "output": 0.0
+  },
+  "deepseek-v4-pro": {
+    "input_cache_hit": 0.0,
+    "input_cache_miss": 0.0,
+    "output": 0.0
+  }
+}

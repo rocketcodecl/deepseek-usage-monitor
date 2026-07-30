@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deepseek-usage-monitor"
+version = "0.1.0"
+description = "Balance, uso y gasto de la API de DeepSeek en tu terminal, dashboard local y barra de menú de macOS"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "deepseek-usage-monitor contributors"}]
+keywords = ["deepseek", "api", "usage", "balance", "monitor", "macos", "menubar"]
+classifiers = [
+    "Environment :: MacOS X",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "requests>=2.31",
+    "typer>=0.9",
+]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.100", "uvicorn>=0.23"]
+menubar = ["rumps>=0.4; sys_platform=='darwin'"]
+dev = ["pytest>=7", "fastapi>=0.100", "uvicorn>=0.23", "httpx>=0.27"]
+all = ["fastapi>=0.100", "uvicorn>=0.23", "httpx>=0.27",
+       "rumps>=0.4; sys_platform=='darwin'"]
+
+[project.scripts]
+dseek = "deepseek_usage.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/USUARIO/deepseek-usage-monitor"
+
+[tool.setuptools.packages.find]
+include = ["deepseek_usage*"]
+
+[tool.setuptools.package-data]
+deepseek_usage = ["pricing.json", "static/*.html"]

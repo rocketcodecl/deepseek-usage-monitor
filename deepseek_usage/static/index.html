@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek · Usage</title>
+<style>
+  :root {
+    --bg: #0f0f11; --card: #1c1c1e; --card2: #242426; --text: #f2f2f2;
+    --muted: #8e8e93; --accent: #ffffff; --warn: #e5b95c; --ok: #34c759;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text);
+         font-family: -apple-system, "SF Pro", "Segoe UI", sans-serif;
+         padding: 40px 48px; }
+  h1 { font-size: 26px; margin-bottom: 10px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .card { background: var(--card); border-radius: 14px; padding: 22px 26px;
+          flex: 1 1 300px; min-width: 260px; }
+  .card .label { color: var(--muted); font-size: 14px; margin-bottom: 14px;
+                 display: flex; gap: 8px; align-items: center; }
+  .card .value { font-size: 34px; font-weight: 650; }
+  .card .value small { color: var(--muted); font-size: 15px; font-weight: 400; }
+  .pill { font-size: 12px; color: var(--warn); background: rgba(229,185,92,.12);
+          border-radius: 6px; padding: 2px 8px; }
+  .btn { background: var(--accent); color: #000; border: 0; border-radius: 20px;
+         padding: 9px 20px; font-weight: 600; cursor: pointer;
+         text-decoration: none; font-size: 14px; }
+  .right { margin-left: auto; }
+  hr { border: 0; border-top: 1px solid #2c2c2e; margin: 36px 0; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 18px; }
+  .seg { background: var(--card); border-radius: 20px; padding: 8px 16px;
+         color: var(--muted); font-size: 13px; cursor: pointer; user-select: none; }
+  .seg.active { color: var(--text); background: var(--card2); }
+  #chart { width: 100%; height: 220px; background: var(--card);
+           border-radius: 14px; margin-top: 18px; }
+  #foot { color: var(--muted); font-size: 12px; margin-top: 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
+         display: inline-block; margin-right: 6px; }
+  .dot.red { background: #ff453a; }
+</style>
+</head>
+<body>
+  <h1>Usage</h1>
+  <p class="sub">Todas las fechas y horas son UTC. Balance en vivo vía API oficial ·
+     requests/tokens registrados por el tracker local.</p>
+
+  <div class="row">
+    <div class="card">
+      <div class="label">Topped-up balance <span class="pill" id="alivio"></span></div>
+      <div class="value"><span id="balance">…</span> <small id="cur">USD</small>
+        <a class="btn right" href="https://platform.deepseek.com/top_up"
+           target="_blank">Top up</a></div>
+    </div>
+    <div class="card">
+      <div class="label">Total cost</div>
+      <div class="value"><span id="totalcost">…</span> <small>USD</small></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="toolbar">
+    <span class="seg" data-days="7">Últimos 7 días</span>
+    <span class="seg active" data-days="30">Últimos 30 días</span>
+    <span class="seg" data-days="90">Últimos 90 días</span>
+    <a class="btn right" id="export" href="/api/export.csv?days=30">Export</a>
+  </div>
+
+  <div class="row">
+    <div class="card"><div class="label">Cost</div>
+      <div class="value"><span id="cost">…</span> <small>USD</small></div></div>
+    <div class="card"><div class="label">API requests</div>
+      <div class="value" id="requests">…</div></div>
+    <div class="card"><div class="label">Tokens</div>
+      <div class="value" id="tokens">…</div></div>
+  </div>
+
+  <canvas id="chart"></canvas>
+  <p id="foot"></p>
+
+<script>
+const fmtN = n => (n ?? 0).toLocaleString("en-US");
+const fmt$ = n => n == null ? "—" : "$" + Number(n).toFixed(2);
+let days = 30;
+
+async function loadSummary() {
+  try {
+    const r = await fetch(`/api/summary?days=${days}`);
+    const s = await r.json();
+    document.getElementById("balance").textContent = fmt$(s.balance.topped_up);
+    document.getElementById("cur").textContent = s.balance.currency || "USD";
+    document.getElementById("totalcost").textContent = fmt$(s.total_cost_alltime);
+    document.getElementById("cost").textContent = fmt$(s.window.cost);
+    document.getElementById("requests").textContent = fmtN(s.window.requests);
+    document.getElementById("tokens").textContent = fmtN(s.window.tokens);
+    const pill = document.getElementById("alivio");
+    if (s.balance.stale) pill.textContent = "offline · último dato guardado";
+    else if (s.balance.is_available === false) pill.textContent = "sin fondos";
+    const ft = document.getElementById("foot");
+    ft.innerHTML = `<span class="dot ${s.balance.stale ? "red" : ""}"></span>` +
+      `Actualizado ${new Date(s.generated_at*1000).toLocaleTimeString()} · ` +
+      `hoy: ${fmt$(s.today.cost)} · tracker: ${fmtN(s.today.requests)} reqs`;
+  } catch (e) { document.getElementById("foot").textContent = "Error: " + e; }
+}
+
+async function loadSeries() {
+  const r = await fetch(`/api/series?days=${days}`);
+  const { series } = await r.json();
+  const cv = document.getElementById("chart");
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = cv.clientWidth * dpr; cv.height = 220 * dpr;
+  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr);
+  const W = cv.clientWidth, H = 220, pad = 30;
+  ctx.clearRect(0, 0, W, H);
+  if (!series.length) {
+    ctx.fillStyle = "#8e8e93"; ctx.font = "13px sans-serif";
+    ctx.fillText("Sin datos del tracker aún. Usa tracker.wrap_client() o dseek demo.",
+                 pad, H/2); return;
+  }
+  const max = Math.max(...series.map(d => d.cost_usd), 1e-6);
+  const bw = Math.max(4, (W - pad*2) / series.length - 4);
+  series.forEach((d, i) => {
+    const x = pad + i * ((W - pad*2) / series.length);
+    const h = (d.cost_usd / max) * (H - pad*2);
+    ctx.fillStyle = "#0a84ff";
+    ctx.beginPath(); ctx.roundRect(x, H - pad - h, bw, h, 3); ctx.fill();
+  });
+  ctx.fillStyle = "#8e8e93"; ctx.font = "11px sans-serif";
+  ctx.fillText(`$${max.toFixed(3)}/día`, pad, 16);
+  ctx.fillText(series[0].day, pad, H - 10);
+  const last = series[series.length-1].day;
+  ctx.fillText(last, W - pad - ctx.measureText(last).width, H - 10);
+}
+
+document.querySelectorAll(".seg").forEach(seg => seg.addEventListener("click", () => {
+  document.querySelectorAll(".seg").forEach(x => x.classList.remove("active"));
+  seg.classList.add("active");
+  days = Number(seg.dataset.days);
+  document.getElementById("export").href = `/api/export.csv?days=${days}`;
+  loadSummary(); loadSeries();
+}));
+
+loadSummary(); loadSeries();
+setInterval(loadSummary, 60000);   // casi tiempo real: refresco cada 60 s
+</script>
+</body>
+</html>

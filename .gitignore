@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+
+# secretos y datos locales (nunca subir)
+.env
+*.db
+*.sqlite
+.DS_Store

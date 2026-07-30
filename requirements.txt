@@ -1,0 +1,4 @@
+requests
+typer
+fastapi
+uvicorn

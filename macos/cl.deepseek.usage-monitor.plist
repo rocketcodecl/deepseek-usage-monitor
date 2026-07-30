@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Autoarranque de la app de menú de barra al iniciar sesión.
+       1) Edita las rutas (python de tu venv) si difieren.
+       2) cp cl.deepseek.usage-monitor.plist ~/Library/LaunchAgents/
+       3) launchctl load ~/Library/LaunchAgents/cl.deepseek.usage-monitor.plist
+       Para detener: launchctl unload ~/Library/LaunchAgents/cl.deepseek.usage-monitor.plist -->
+  <key>Label</key>
+  <string>cl.deepseek.usage-monitor</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>-m</string>
+    <string>deepseek_usage.menubar_app</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- Alternativa a ~/.config/deepseek-usage-monitor/.env (menos recomendado) -->
+    <!-- <key>DEEPSEEK_API_KEY</key><string>sk-tu-clave</string> -->
+    <key>DSU_MENUBAR_INTERVAL</key>
+    <string>120</string>
+    <key>DSU_LOW_BALANCE</key>
+    <string>1.0</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/deepseek-usage-monitor.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/deepseek-usage-monitor.err</string>
+</dict>
+</plist>

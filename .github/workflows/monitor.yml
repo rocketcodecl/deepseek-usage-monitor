@@ -1,0 +1,61 @@
+name: deepseek-balance-monitor
+
+# Monitor automático gratis: consulta el balance cada 6 h, guarda el historial
+# en data/balance_history.csv (commiteado al repo) y falla (email de GitHub)
+# si el saldo baja del umbral. Opcional: Telegram con secrets.TELEGRAM_BOT_TOKEN
+# + secrets.TELEGRAM_CHAT_ID.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"     # cada 6 horas (UTC)
+  workflow_dispatch:           # botón "Run workflow" manual
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar
+        run: pip install .
+
+      - name: Balance snapshot
+        id: bal
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DSU_LOW_BALANCE: ${{ vars.DSU_LOW_BALANCE || '1.0' }}
+        run: |
+          set +e
+          dseek snapshot --csv data/balance_history.csv > balance_report.txt 2>&1
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          cat balance_report.txt >> "$GITHUB_STEP_SUMMARY" || true
+          cat balance_report.txt
+
+      - name: Alerta Telegram (opcional) si el saldo está bajo
+        if: steps.bal.outputs.exit == '2' && env.TG_TOKEN != ''
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT}" \
+            -d text="⚠️ DeepSeek: saldo bajo. $(head -1 balance_report.txt)" > /dev/null
+
+      - name: Commit historial
+        run: |
+          git config user.name "deepseek-monitor[bot]"
+          git config user.email "deepseek-monitor[bot]@users.noreply.github.com"
+          git add data/balance_history.csv
+          git diff --cached --quiet || git commit -m "data: balance snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
+
+      - name: Fallar si saldo bajo (aviso por email de Actions)
+        if: steps.bal.outputs.exit == '2'
+        run: exit 1
