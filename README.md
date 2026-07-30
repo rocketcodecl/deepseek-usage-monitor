@@ -78,7 +78,7 @@ from openai import OpenAI
 from deepseek_usage import tracker
 
 client = tracker.wrap_client(OpenAI(api_key="sk-...", base_url="https://api.deepseek.com"))
-resp = client.chat.completions.create(model="deepseek-deepseek-chat" and "deepseek-chat",
+resp = client.chat.completions.create(model="deepseek-chat",
                                       messages=[...])   # se registra solo ✔
 ```
 
